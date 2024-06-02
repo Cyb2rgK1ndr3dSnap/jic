@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar HTML dinámico</title>
+    <style>
+        .contenedor {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .contenido-dinamico {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="contenedor">
+        <button id="agregarBtn">Agregar contenido</button>
+        <div id="contenidoDinamico">
+
+        </div>
+    </div>
+
+    <script type="module" async>
+        const agregarBtn = document.getElementById('agregarBtn');
+        const contenidoDinamico = document.getElementById('contenidoDinamico');
+
+
+        var data = await fetch("<%= host %>/patients")
+        var dataJson = await data.json()
+        var res = JSON.parse(dataJson)
+
+        res.forEach(post => {
+            console.log(post)
+            const nuevoContenido = document.createElement('div');
+            nuevoContenido.id = `${post.internalid}`
+            nuevoContenido.className = `container-patient`
+            nuevoContenido.innerHTML = `Paciente:${post.paciente}<button class="studies-btn" id="studiesBtn" value="${post.internalid}">Studies</button>`;
+            contenidoDinamico.appendChild(nuevoContenido)
+        });
+        
+        ///Botón para agregar studies de cierto paciente
+        contenidoDinamico.addEventListener('click', async (event) => {
+            if (event.target.classList.contains('studies-btn')) {
+                const buttonValue = event.target.value;
+                //console.log(buttonValue);
+                var data = await fetch("<%= host %>/studies", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        parentId:buttonValue
+                    })
+                })
+                const patient = document.getElementById(buttonValue);
+
+                var dataJson = await data.json()
+                var res = JSON.parse(dataJson)
+                res.forEach(post => {
+                    const studie = document.createElement('div');
+                    studie.id = `${post.internalid}`
+                    studie.className = `container-studie`
+                    studie.innerHTML = `<p>Studie fecha:${post.value}</p><button class="series-btn" id="seriesBtn" value="${post.internalid}">Series</button>`;
+                    patient.appendChild(studie)
+                    //console.log(post)
+                    //console.log(post.publicid)
+                });
+            }
+        });
+
+        ///Botón para agregar las series, son los examenes per se
+        contenidoDinamico.addEventListener('click', async (event) => {
+            if (event.target.classList.contains('series-btn')) {
+                const buttonValue = event.target.value;
+                //console.log(buttonValue);
+                var data = await fetch('<%= host %>/series', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        parentId:buttonValue
+                    })
+                })
+                //console.log(buttonValue)
+                const studie = document.getElementById(buttonValue);
+
+                var dataJson = await data.json()
+                var res = JSON.parse(dataJson)
+                res.forEach(post => {
+                    const serie = document.createElement('div');
+                    serie.id = `${post.internalid}`
+                    serie.className = `container-studie`
+                    serie.innerHTML = `<p>Serie id:${post.publicid}</p><button class="see-btn" id="seeBtn" value="${post.publicid}">Observar</button>`;
+                    studie.appendChild(serie)
+                    const inference = document.createElement('div');
+                    inference.id = `${post.internalid}`
+                    inference.className = `container-inference`
+                    inference.innerHTML = `<button class="inference-btn" id="inferenceBtn" value="${post.publicid}">Inference</button>`;
+                    studie.appendChild(inference)
+                });
+            }
+        });
+
+        contenidoDinamico.addEventListener('click', async (event) => {
+            if (event.target.classList.contains('see-btn')) {
+                const buttonValue = event.target.value;
+                window.open(`<%= host %>/serie/${buttonValue}`);
+            }
+        });
+
+        contenidoDinamico.addEventListener('click', async (event) => {
+            if (event.target.classList.contains('inference-btn')) {
+                const buttonValue = event.target.value;
+                console.log("inference"+buttonValue);
+                var data = await fetch("<%= host %>/inference", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id:buttonValue,
+                        topography:"segmentation_spleen"
+                    })
+                })
+            }    
+        });
+        //PRUEBA
+        agregarBtn.addEventListener('click', () => {
+            const nuevoContenido = '<p>¡Hola! Este contenido se agregó dinámicamente.</p>';
+            contenidoDinamico.innerHTML += nuevoContenido;
+        });
+        /*contenidoDinamico.addEventListener('click', (event) => {
+            if (event.target.id === 'studiesBtn') {
+            const buttonValue = event.target.value;
+            console.log(buttonValue);
+            }
+        });*/
+
+
+
+        
+
+    </script>
+</body>
+</html>

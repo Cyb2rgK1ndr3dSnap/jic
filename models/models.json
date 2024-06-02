@@ -1,0 +1,9 @@
+[
+    {"model":"segmentation_spleen,"},
+    {"model":"segmentation_test_1,"},
+    {"model":"segmentation_test_2,"},
+    {"model":"segmentation_test_3,"},
+    {"model":"segmentation_test_4,"},
+    {"model":"segmentation_test_5,"},
+    {"model":"segmentation_test_6"}
+]

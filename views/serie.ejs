@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>JIC Project</title>
+    <link rel="stylesheet" href="/css/view.css">
+  </head>
+  <body>
+    <header>
+      <select id="sliceType">
+        <option value="0">Axial</option>
+        <option value="1">Coronal</option>
+        <option value="2">Sagittal</option>
+        <option value="4">Render</option>
+        <option value="3" selected>A+C+S+R</option>
+      </select>
+      <label for="tdSlider">Active 3D in A+C+S+R</label>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        value="0"
+        class="slider"
+        id="tdSlider"
+      />
+      <label for="sliceSlider">A+C+S</label>
+      <input
+        type="range"
+        min="0"
+        max="2"
+        value="0"
+        class="slider"
+        id="sliceSlider"
+      />
+      <label for="planeSlider">Plane</label>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        value="0"
+        class="slider"
+        id="planeSlider"
+      />
+    </header>
+    <main id="container">
+      <canvas id="gl"></canvas>
+    </main>
+  </body>
+  <script type="module" async>
+    import * as niivue from "/js/index.js"
+    var nv = new niivue.Niivue({
+      isOrientCube: true
+    });
+    var sliceMovement = [0,0,0]
+    const url = window.location.href;
+    const parts = url.split('/');
+    var volumeList = [
+      { url: `/series/${parts[4]}.nii.gz`,
+        colormap: "gray",
+        opacity: 1
+      },
+      /*{
+        url: "/segmentations/a8ab34c5-a1b70fcf-7f182573-fc49269a-0936023f_segmentation_spleen.nii.gz",
+        colormap: "red"
+      }*/
+    ]
+
+    nv.attachTo("gl");
+    await nv.loadVolumes(volumeList);
+    
+    var slice = document.getElementById("sliceType");
+    slice.onchange = function () {
+      let st = parseInt(document.getElementById("sliceType").value);
+      nv.setSliceType(st);
+      if(st == 0){
+        sliceMovement = [0,0,1]
+      }
+      if(st == 1){
+        sliceMovement = [0,1,0]
+      }
+      if(st == 2){
+        sliceMovement = [1,0,0]
+      }
+    }
+
+    planeSlider.oninput = function () {
+      if(this.value == 1){
+        nv.setClipPlane([0, 270, 0])
+      }else{
+        nv.setClipPlane([2, 0, 0])
+      }
+    };
+
+    tdSlider.oninput = function () {
+      if(this.value == 1){
+        nv.opts.multiplanarForceRender = true
+      }else{
+        nv.opts.multiplanarForceRender = false
+      }
+      slice.onchange()
+    };
+    
+    document.addEventListener('keydown', function(event) {
+      serieMovement(event);
+    });
+    
+    function serieMovement(event) {
+      var slice = parseInt(document.getElementById("sliceSlider").value);
+      if(parseInt(document.getElementById("sliceType").value) == 3)
+        if(slice == 0){           //A
+          sliceMovement = [0,0,1]
+        }else if(slice == 1){     //C
+          sliceMovement = [0,1,0]
+        }else{                    //S
+          sliceMovement = [1,0,0]
+        }
+      switch(event.key) {
+        case 'ArrowLeft':
+          nv.moveCrosshairInVox(-sliceMovement[0], -sliceMovement[1], -sliceMovement[2])
+          break;
+        case 'ArrowRight':
+          nv.moveCrosshairInVox(sliceMovement[0], sliceMovement[1], sliceMovement[2])
+          // Aquí puedes definir cualquier acción que desees ejecutar para la flecha derecha
+          break;
+      }
+    }
+  </script>
+</html>
