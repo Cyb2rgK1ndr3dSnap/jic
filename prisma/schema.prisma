@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model attachedfiles {
+  id               BigInt
+  filetype         Int
+  uuid             String    @db.VarChar(64)
+  compressedsize   BigInt?
+  uncompressedsize BigInt?
+  compressiontype  Int?
+  uncompressedhash String?   @db.VarChar(40)
+  compressedhash   String?   @db.VarChar(40)
+  revision         Int?
+  resources        resources @relation(fields: [id], references: [internalid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([id, filetype])
+}
+
+model changes {
+  seq          BigInt     @id @default(autoincrement())
+  changetype   Int?
+  internalid   BigInt?
+  resourcetype Int?
+  date         String?    @db.VarChar(64)
+  resources    resources? @relation(fields: [internalid], references: [internalid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([internalid], map: "changesindex")
+}
+
+model dicomidentifiers {
+  id         BigInt
+  taggroup   Int
+  tagelement Int
+  value      String?
+  resources  resources @relation(fields: [id], references: [internalid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([id, taggroup, tagelement])
+  @@index([id], map: "dicomidentifiersindex1")
+  @@index([taggroup, tagelement], map: "dicomidentifiersindex2")
+  @@index([value], map: "dicomidentifiersindexvalues")
+  @@index([value(ops: raw("gin_trgm_ops"))], map: "dicomidentifiersindexvalues2", type: Gin)
+}
+
+model exportedresources {
+  seq               BigInt  @id @default(autoincrement())
+  resourcetype      Int?
+  publicid          String? @db.VarChar(64)
+  remotemodality    String?
+  patientid         String? @db.VarChar(64)
+  studyinstanceuid  String?
+  seriesinstanceuid String?
+  sopinstanceuid    String?
+  date              String? @db.VarChar(64)
+}
+
+model globalintegers {
+  key   Int     @id
+  value BigInt?
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model globalintegerschanges {
+  key   Int?
+  value BigInt?
+
+  @@ignore
+}
+
+model globalproperties {
+  property Int     @id
+  value    String?
+}
+
+model labels {
+  id        BigInt
+  label     String
+  resources resources @relation(fields: [id], references: [internalid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([id, label])
+  @@index([id], map: "labelsindex1")
+  @@index([label], map: "labelsindex2")
+}
+
+model maindicomtags {
+  id         BigInt
+  taggroup   Int
+  tagelement Int
+  value      String?
+  resources  resources @relation(fields: [id], references: [internalid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([id, taggroup, tagelement])
+  @@index([id], map: "maindicomtagsindex")
+}
+
+model metadata {
+  id        BigInt
+  type      Int
+  value     String?
+  revision  Int?
+  resources resources @relation(fields: [id], references: [internalid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([id, type])
+}
+
+model patientrecyclingorder {
+  seq       BigInt     @id @default(autoincrement())
+  patientid BigInt?    @unique(map: "uniquepatientid")
+  resources resources? @relation(fields: [patientid], references: [internalid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([patientid], map: "patientrecyclingindex")
+}
+
+model resources {
+  internalid            BigInt                 @id @default(autoincrement())
+  resourcetype          Int
+  publicid              String                 @unique(map: "uniquepublicid") @db.VarChar(64)
+  parentid              BigInt?
+  attachedfiles         attachedfiles[]
+  changes               changes[]
+  dicomidentifiers      dicomidentifiers[]
+  labels                labels[]
+  maindicomtags         maindicomtags[]
+  metadata              metadata[]
+  patientrecyclingorder patientrecyclingorder?
+  process               process[]
+  resources             resources?             @relation("resourcesToresources", fields: [parentid], references: [internalid], onDelete: Cascade, onUpdate: NoAction)
+  other_resources       resources[]            @relation("resourcesToresources")
+
+  @@index([parentid], map: "childrenindex")
+  @@index([publicid], map: "publicindex")
+  @@index([resourcetype], map: "resourcetypeindex")
+}
+
+model serverproperties {
+  server   String  @db.VarChar(64)
+  property Int
+  value    String?
+
+  @@id([server, property])
+}
+
+model process {
+  id           String    @db.VarChar(64)
+  model        String    @db.VarChar(255)
+  segmentation Boolean?  @default(false)
+  stl          Boolean?  @default(false)
+  creacion     DateTime? @db.Date
+  resources    resources @relation(fields: [id], references: [publicid], onDelete: Cascade, onUpdate: NoAction, map: "process_publicid_fkey")
+
+  @@id([id, model])
+}
