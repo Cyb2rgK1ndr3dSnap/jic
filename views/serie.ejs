@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>JIC Project</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #1a1a1a;
+      color: #e0e0e0;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #333;
+      color: white;
+      padding: 10px 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    header select, header input[type="range"] {
+      margin-right: 10px;
+      color: white;
+      background-color: #444;
+      border: none;
+      border-radius: 4px;
+      padding: 5px;
+    }
+
+    header select:hover, header input[type="range"]:hover {
+      background-color: #555;
+    }
+
+    header label {
+      margin-right: 10px;
+    }
+
+    #settings {
+      position: relative;
+      display: inline-block;
+    }
+
+    #settingsMenu {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: #444;
+      border: 1px solid #333;
+      width: 250px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      z-index: 1;
+      padding: 20px;
+      border-radius: 8px;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    #settingsMenu label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #ddd;
+    }
+
+    #settingsMenu input[type="color"], 
+    #settingsMenu input[type="range"], 
+    #settingsMenu input[type="number"] {
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 5px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background-color: #555;
+      color: white;
+    }
+
+    #settingsMenu input[type="color"]:focus,
+    #settingsMenu input[type="range"]:focus,
+    #settingsMenu input[type="number"]:focus {
+      border-color: #007bff;
+    }
+
+    #settingsMenu .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 34px;
+      height: 20px;
+      margin-bottom: 15px;
+    }
+
+    #settingsMenu .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    #settingsMenu .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    #settingsMenu .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    #settingsMenu input:checked + .slider {
+      background-color: #007bff;
+    }
+
+    #settingsMenu input:checked + .slider:before {
+      transform: translateX(14px);
+    }
+
+    #settings.active #settingsMenu {
+      display: block;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    main {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: calc(100vh - 50px);
+      background-color: #1a1a1a;
+    }
+
+    #gl {
+      border: 1px solid #444;
+      width: 80%;
+      height: 80%;
+      border-radius: 8px;
+    }
+
+    #sidebar {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      z-index: 1;
+      top: 0;
+      left: 0;
+      background-color: #333;
+      overflow-x: hidden;
+      transition: 0.5s;
+      padding-top: 60px;
+    }
+
+    #sidebar a {
+      padding: 8px 8px 8px 32px;
+      text-decoration: none;
+      font-size: 25px;
+      color: white;
+      display: block;
+      transition: 0.3s;
+    }
+
+    #sidebar a:hover {
+      background-color: #575757;
+    }
+
+    #sidebar .closebtn {
+      position: absolute;
+      top: 0;
+      right: 25px;
+      font-size: 36px;
+      margin-left: 50px;
+    }
+
+    #hamburger {
+      font-size: 30px;
+      cursor: pointer;
+    }
+
+    .fa-home, .fa-table {
+      margin-right: 10px;
+    }
+
+    #loadingOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      z-index: 2;
+      flex-direction: column;
+    }
+
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 4px solid #3498db;
+      width: 60px;
+      height: 60px;
+      -webkit-animation: spin 2s linear infinite;
+      animation: spin 2s linear infinite;
+    }
+
+    @-webkit-keyframes spin {
+      0% { -webkit-transform: rotate(0deg); }
+      100% { -webkit-transform: rotate(360deg); }
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #loadingText {
+      margin-top: 20px;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span id="hamburger">&#9776;</span>
+    <div>
+      <select id="sliceType">
+        <option value="0">Axial</option>
+        <option value="1">Coronal</option>
+        <option value="2">Sagittal</option>
+        <option value="4">Render</option>
+        <option value="3" selected>A+C+S+R</option>
+      </select>
+      <label for="tdSlider">Active 3D in A+C+S+R</label>
+      <input type="range" min="0" max="1" value="0" class="slider" id="tdSlider"/>
+      <label for="sliceSlider">A+C+S</label>
+      <input type="range" min="0" max="2" value="0" class="slider" id="sliceSlider"/>
+      <label for="planeSlider">Plane</label>
+      <input type="range" min="0" max="1" value="0" class="slider" id="planeSlider"/>
+    </div>
+    <div id="settings">
+      <i class="settings-icon fa fa-cog" id="settingsIcon"></i>
+      <div id="settingsMenu">
+        <label>Background color</label>
+        <input type="color" id="bgColor" value="#000000">
+        
+        <label>Clip plane color</label>
+        <input type="color" id="clipColor" value="#FF00FF">
+        
+        <label>Clip plane opacity</label>
+        <input type="range" id="clipOpacity" min="0" max="1" step="0.1" value="0.5">
+        
+        <label>Crosshair color</label>
+        <input type="color" id="crosshairColor" value="#FF0000">
+        
+        <label>Crosshair opacity</label>
+        <input type="range" id="crosshairOpacity" min="0" max="1" step="0.1" value="1">
+        
+        <label>Selection box color</label>
+        <input type="color" id="selectionBoxColor" value="#FFFFFF">
+        
+        <label>Crosshair size</label>
+        <input type="number" id="crosshairSize" min="0" max="10" step="0.1" value="1">
+        
+        <label>Text size</label>
+        <input type="number" id="textSize" min="0" max="1" step="0.01" value="0.06">
+        
+        <label>Ruler color</label>
+        <input type="color" id="rulerColor" value="#FF0000">
+        
+        <label>Ruler thickness</label>
+        <input type="number" id="rulerThickness" min="0" max="10" step="0.1" value="4">
+        
+        <label>Ruler opacity</label>
+        <input type="range" id="rulerOpacity" min="0" max="1" step="0.1" value="0.8">
+        
+        <label>Location table</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="locationTable">
+          <span class="slider round"></span>
+        </label>
+        
+        <label>Orientation cube</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="orientationCube">
+          <span class="slider round"></span>
+        </label>
+        
+        <label>Ruler</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="ruler">
+          <span class="slider round"></span>
+        </label>
+        
+        <label>Clip plane</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="clipPlane">
+          <span class="slider round"></span>
+        </label>
+        
+        <label>Corner text</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="cornerText">
+          <span class="slider round"></span>
+        </label>
+        
+        <label>Radiological</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="radiological">
+          <span class="slider round"></span>
+        </label>
+        
+        <label>3D crosshair</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="crosshair3D">
+          <span class="slider round"></span>
+        </label>
+        
+        <label>Show color bar</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="showColorBar">
+          <span class="slider round"></span>
+        </label>
+      </div>
+    </div>
+  </header>
+  <div id="sidebar">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <a href="#"><i class="fa fa-home"></i>Home</a>
+    <a href="/views/index.ejs"><i class="fa fa-table"></i>Tabla</a>
+  </div>
+  <div id="loadingOverlay">
+    <div class="loader"></div>
+    <div id="loadingText">Loading... 0%</div>
+  </div>
+  <main id="container">
+    <canvas id="gl"></canvas>
+  </main>
+  <script type="module" async>
+    import * as niivue from "/js/index.js"
+    var nv = new niivue.Niivue({
+      isOrientCube: true
+    });
+    var sliceMovement = [0,0,0]
+    const url = window.location.href;
+    const parts = url.split('/');
+    var volumeList = [
+      { url: `/series/${parts[4]}.nii.gz`,
+        colormap: "gray",
+        opacity: 1
+      },
+    ]
+
+    function updateProgress(percentage) {
+      const loadingText = document.getElementById("loadingText");
+      loadingText.innerHTML = `Loading... ${percentage}%`;
+    }
+
+    function simulateLoading(callback) {
+      let percentage = 0;
+      const interval = setInterval(() => {
+        percentage += 10;
+        if (percentage > 100) {
+          clearInterval(interval);
+          callback();
+        } else {
+          updateProgress(percentage);
+        }
+      }, 300);
+    }
+
+    async function loadVolumes() {
+      try {
+        console.log("Starting to load volumes...");
+        simulateLoading(async () => {
+          await nv.loadVolumes(volumeList);
+          console.log("Volumes loaded successfully.");
+          document.getElementById("loadingOverlay").style.display = "none";
+        });
+      } catch (error) {
+        console.error("Error loading volumes: ", error);
+        alert("Error loading volumes. Please check the console for more details.");
+      }
+    }
+
+    nv.attachTo("gl");
+    loadVolumes();
+    
+    var slice = document.getElementById("sliceType");
+    slice.onchange = function () {
+      let st = parseInt(document.getElementById("sliceType").value);
+      nv.setSliceType(st);
+      if(st == 0){
+        sliceMovement = [0,0,1]
+      }
+      if(st == 1){
+        sliceMovement = [0,1,0]
+      }
+      if(st == 2){
+        sliceMovement = [1,0,0]
+      }
+    }
+
+    planeSlider.oninput = function () {
+      if(this.value == 1){
+        nv.setClipPlane([0, 270, 0])
+      }else{
+        nv.setClipPlane([2, 0, 0])
+      }
+    };
+
+    tdSlider.oninput = function () {
+      if(this.value == 1){
+        nv.opts.multiplanarForceRender = true
+      }else{
+        nv.opts.multiplanarForceRender = false
+      }
+      slice.onchange()
+    };
+    
+    document.addEventListener('keydown', function(event) {
+      serieMovement(event);
+    });
+    
+    function serieMovement(event) {
+      var slice = parseInt(document.getElementById("sliceSlider").value);
+      if(parseInt(document.getElementById("sliceType").value) == 3)
+        if(slice == 0){           //A
+          sliceMovement = [0,0,1]
+        }else if(slice == 1){     //C
+          sliceMovement = [0,1,0]
+        }else{                    //S
+          sliceMovement = [1,0,0]
+        }
+      switch(event.key) {
+        case 'ArrowLeft':
+          nv.moveCrosshairInVox(-sliceMovement[0], -sliceMovement[1], -sliceMovement[2])
+          break;
+        case 'ArrowRight':
+          nv.moveCrosshairInVox(sliceMovement[0], sliceMovement[1], sliceMovement[2])
+          break;
+      }
+    }
+
+    // Toggle settings menu
+    document.getElementById("settingsIcon").onclick = function () {
+      document.getElementById("settings").classList.toggle("active");
+    };
+
+    // Open and close sidebar
+    document.getElementById("hamburger").onclick = function() {
+      document.getElementById("sidebar").style.width = "250px";
+    }
+
+    document.querySelector(".closebtn").onclick = function() {
+      closeNav();
+    }
+
+    function closeNav() {
+      document.getElementById("sidebar").style.width = "0";
+    }
+  </script>
+</body>
+</html>

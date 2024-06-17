@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla de Pacientes Mejorada</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            background-color: #333;
+            color: #e0e0e0;
+            padding: 1em;
+            text-align: center;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .contenedor {
+            width: 90%;
+            margin: 20px auto;
+            background-color: #2c2c2c;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 12px 15px;
+            text-align: left;
+        }
+        th {
+            background-color: #3d3d3d;
+            color: #e0e0e0;
+        }
+        td {
+            background-color: #2c2c2c;
+            color: #e0e0e0;
+        }
+        .hidden {
+            display: none;
+        }
+        .table-row {
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .table-row:hover {
+            background-color: #454545;
+        }
+        .toggle-icon {
+            cursor: pointer;
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-right: 10px;
+            color: #e0e0e0;
+        }
+        .toggle-icon i {
+            transition: transform 0.3s ease;
+        }
+        .toggle-icon .fa-chevron-up {
+            transform: rotate(180deg);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            cursor: pointer;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .btn i {
+            margin-right: 5px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        .btn-see {
+            background-color: #28a745;
+        }
+        .btn-see:hover {
+            background-color: #218838;
+        }
+        .btn-download {
+            background-color: #17a2b8;
+        }
+        .btn-download:hover {
+            background-color: #138496;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Tabla de Pacientes</h1>
+    </header>
+    <div class="contenedor">
+        <table id="contenidoDinamico" class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Paciente</th>
+                    <th>Estudios</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <script type="module">
+        const contenidoDinamico = document.getElementById('contenidoDinamico').getElementsByTagName('tbody')[0];
+
+        async function fetchData(url, options = {}) {
+            const response = await fetch(url, options);
+            return response.json();
+        }
+
+        async function loadData() {
+            const data = await fetchData("<%= host %>/patients");
+            const res = JSON.parse(data);
+
+            for (const patient of res) {
+                const patientRow = document.createElement('tr');
+                patientRow.id = `patient-${patient.internalid}`;
+                const toggleIcon = document.createElement('div');
+                toggleIcon.className = 'toggle-icon';
+                toggleIcon.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                patientRow.innerHTML = `
+                    <td>
+                        ${toggleIcon.outerHTML} Paciente: ${patient.paciente}
+                    </td>
+                    <td></td>
+                `;
+                contenidoDinamico.appendChild(patientRow);
+
+                const studiesData = await fetchData("<%= host %>/studies", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        parentId: patient.internalid
+                    })
+                });
+                const studiesRes = JSON.parse(studiesData);
+
+                const studiesRow = document.createElement('tr');
+                studiesRow.id = `studies-${patient.internalid}`;
+                studiesRow.classList.add('hidden');
+                studiesRow.innerHTML = `
+                    <td colspan="2">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Fecha de Estudio</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studies-content-${patient.internalid}">
+                            </tbody>
+                        </table>
+                    </td>
+                `;
+                contenidoDinamico.appendChild(studiesRow);
+
+                for (const study of studiesRes) {
+                    const studyRow = document.createElement('tr');
+                    studyRow.id = `study-${study.internalid}`;
+                    const studyToggleIcon = document.createElement('div');
+                    studyToggleIcon.className = 'toggle-icon';
+                    studyToggleIcon.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                    studyRow.innerHTML = `
+                        <td>
+                            ${studyToggleIcon.outerHTML} Estudio fecha: ${study.value}
+                        </td>
+                        <td></td>
+                    `;
+                    document.getElementById(`studies-content-${patient.internalid}`).appendChild(studyRow);
+
+                    const seriesData = await fetchData('<%= host %>/series', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            parentId: study.internalid
+                        })
+                    });
+                    const seriesRes = JSON.parse(seriesData);
+
+                    const seriesRow = document.createElement('tr');
+                    seriesRow.id = `series-${study.internalid}`;
+                    seriesRow.classList.add('hidden');
+                    seriesRow.innerHTML = `
+                        <td colspan="2">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Serie ID</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="series-content-${study.internalid}">
+                                </tbody>
+                            </table>
+                        </td>
+                    `;
+                    studyRow.parentNode.insertBefore(seriesRow, studyRow.nextSibling);
+
+                    for (const serie of seriesRes) {
+                        const serieRow = document.createElement('tr');
+                        serieRow.id = `serie-${serie.internalid}`;
+                        serieRow.innerHTML = `
+                            <td>Serie id: ${serie.publicid}</td>
+                            <td>
+                                <button class="btn btn-see see-btn" value="${serie.publicid}">
+                                    <i class="fas fa-eye"></i> Ver
+                                </button>
+                                <button class="btn btn-download download-btn" value="${serie.publicid}">
+                                    <i class="fas fa-download"></i> Descargar
+                                </button>
+                            </td>
+                        `;
+                        document.getElementById(`series-content-${study.internalid}`).appendChild(serieRow);
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadData);
+
+        contenidoDinamico.addEventListener('click', async (event) => {
+            let target = event.target;
+
+            if (target.closest('.see-btn')) {
+                const buttonValue = target.closest('.see-btn').value;
+                window.open(`<%= host %>/serie/${buttonValue}`);
+            } else if (target.closest('.download-btn')) {
+                const buttonValue = target.closest('.download-btn').value;
+                // await fetchData("<%= host %>/inference", {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json'
+                //     },
+                //     body: JSON.stringify({
+                //         id: buttonValue,
+                //         topography: "segmentation_spleen"
+                //     })
+                // });
+            }
+
+            while (target != null && !target.classList.contains('toggle-icon')) {
+                target = target.parentElement;
+            }
+
+            if (target != null && target.classList.contains('toggle-icon')) {
+                const parentRow = target.closest('tr');
+                let targetId = '';
+
+                if (parentRow.id.startsWith('patient-')) {
+                    targetId = `studies-${parentRow.id.substring(8)}`;
+                } else if (parentRow.id.startsWith('study-')) {
+                    targetId = `series-${parentRow.id.substring(6)}`;
+                }
+
+                const targetRow = document.getElementById(targetId);
+                if (targetRow) {
+                    targetRow.classList.toggle('hidden');
+                    const icon = target.querySelector('i');
+                    if (icon.classList.contains('fa-chevron-down')) {
+                        icon.classList.remove('fa-chevron-down');
+                        icon.classList.add('fa-chevron-up');
+                    } else {
+                        icon.classList.remove('fa-chevron-up');
+                        icon.classList.add('fa-chevron-down');
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
