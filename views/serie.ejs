@@ -11,6 +11,7 @@
       padding: 0;
       background-color: #1a1a1a;
       color: #e0e0e0;
+      overflow-x: hidden;
     }
 
     header {
@@ -164,6 +165,13 @@
       overflow-x: hidden;
       transition: 0.5s;
       padding-top: 60px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      transform: translateX(-100%);
+    }
+
+    #sidebar.open {
+      width: 250px;
+      transform: translateX(0);
     }
 
     #sidebar a {
@@ -192,8 +200,71 @@
       cursor: pointer;
     }
 
-    .fa-home, .fa-table {
-      margin-right: 10px;
+    #customBox {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+      margin: 10px;
+      background-color: #444;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+    }
+
+    #customBox.dark {
+      background-color: #000;
+    }
+
+    #customBox .eye-icon {
+      font-size: 24px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .menu-buttons {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px;
+      margin: 10px;
+    }
+
+    .menu-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      margin: 0 5px;
+      background-color: #444;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+      cursor: pointer;
+      font-size: 20px;
+      width: 40px;
+      height: 40px;
+    }
+
+    .menu-button img {
+      width: 32px;
+      height: 32px;
+    }
+
+    .menu-button:hover {
+      background-color: #575757;
+    }
+
+    #messageBox {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      margin: 10px;
+      background-color: #444;
+      border-radius: 8px;
+      height: 50px;
+      color: #e0e0e0;
+      text-align: center;
+      font-size: 16px;
+      width: 200px;
     }
 
     #loadingOverlay {
@@ -236,6 +307,12 @@
       margin-top: 20px;
       font-size: 24px;
     }
+
+    .arrow-icon {
+  font-size: 24px; 
+  margin-left: 10px;
+}
+
   </style>
 </head>
 <body>
@@ -342,10 +419,27 @@
       </div>
     </div>
   </header>
-  <div id="sidebar">
-    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-    <a href="#"><i class="fa fa-home"></i>Home</a>
-    <a href="/views/index.ejs"><i class="fa fa-table"></i>Tabla</a>
+  <div id="sidebar" class="sidebar">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">
+      <i class="fa fa-arrow-left arrow-icon"></i>
+    </a>
+    <div id="customBox">
+      <i class="fa fa-eye eye-icon" id="toggleEye"></i>
+    </div>
+    <div class="menu-buttons">
+      <div class="menu-button" id="lungButton">
+        <img src="/Images/pulmones.png" alt="Lung Icon">
+      </div>
+      <div class="menu-button" id="colonButton">
+        <img src="/Images/colon.png" alt="Colon Icon">
+      </div>
+      <div class="menu-button" id="kidneyButton">
+        <img src="/Images/rinones.png" alt="Kidney Icon">
+      </div>
+    </div>
+    <div id="messageBox">
+      <!-- Aquí se mostrará el mensaje -->
+    </div>
   </div>
   <div id="loadingOverlay">
     <div class="loader"></div>
@@ -467,7 +561,7 @@
 
     // Open and close sidebar
     document.getElementById("hamburger").onclick = function() {
-      document.getElementById("sidebar").style.width = "250px";
+      document.getElementById("sidebar").classList.add("open");
     }
 
     document.querySelector(".closebtn").onclick = function() {
@@ -475,7 +569,12 @@
     }
 
     function closeNav() {
-      document.getElementById("sidebar").style.width = "0";
+      document.getElementById("sidebar").classList.remove("open");
+    }
+
+    // Toggle box color
+    document.getElementById("toggleEye").onclick = function() {
+      document.getElementById("customBox").classList.toggle("dark");
     }
   </script>
 </body>
