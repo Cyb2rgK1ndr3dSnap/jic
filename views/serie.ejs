@@ -11,6 +11,7 @@
       padding: 0;
       background-color: #1a1a1a;
       color: #e0e0e0;
+      overflow-x: hidden;
     }
 
     header {
@@ -38,6 +39,12 @@
 
     header label {
       margin-right: 10px;
+    }
+
+    p {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 20px;
+      margin-left: 10px;
     }
 
     #settings {
@@ -144,6 +151,8 @@
       align-items: center;
       height: calc(100vh - 50px);
       background-color: #1a1a1a;
+      flex: 1;
+      position: relative;
     }
 
     #gl {
@@ -164,6 +173,13 @@
       overflow-x: hidden;
       transition: 0.5s;
       padding-top: 60px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      transform: translateX(-100%);
+    }
+
+    #sidebar.open {
+      width: 250px;
+      transform: translateX(0);
     }
 
     #sidebar a {
@@ -192,8 +208,85 @@
       cursor: pointer;
     }
 
-    .fa-home, .fa-table {
-      margin-right: 10px;
+    #customBox {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      margin: 10px;
+      background-color: #444;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+    }
+
+    #customBox.dark {
+      background-color: #000;
+    }
+
+    #customBox .eye-icon {
+      font-size: 24px;
+      cursor: pointer;
+      margin-left: 10px;
+      pointer-events: none;
+    }
+
+    .volume-id{
+      pointer-events: none;
+    }
+
+    .menu-buttons {
+      justify-content: space-around;
+      margin: 10px;
+      overflow: hidden;
+      transition: height 1.5s ease;
+      height: 200px;
+    }
+
+    .menu-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      margin: 0 5px;
+      background-color: #444;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+      cursor: pointer;
+      font-size: 20px;
+      width: 40px;
+      height: 40px;
+    }
+
+    .menu-button img {
+      width: 32px;
+      height: 32px;
+    }
+
+    .menu-button:hover {
+      background-color: #575757;
+    }
+
+    .images {
+      pointer-events: none;
+    }
+
+    .menu-buttons.minimizado {
+      height: 0px; /* Altura minimizada */
+      pointer-events: none;
+    }
+
+    #messageBox {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      margin: 10px;
+      background-color: #444;
+      border-radius: 8px;
+      height: 50px;
+      color: #e0e0e0;
+      text-align: center;
+      font-size: 16px;
+      width: 200px;
     }
 
     #loadingOverlay {
@@ -236,6 +329,12 @@
       margin-top: 20px;
       font-size: 24px;
     }
+
+    .arrow-icon {
+  font-size: 24px; 
+  margin-left: 10px;
+}
+
   </style>
 </head>
 <body>
@@ -342,38 +441,80 @@
       </div>
     </div>
   </header>
-  <div id="sidebar">
-    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-    <a href="#"><i class="fa fa-home"></i>Home</a>
-    <a href="/views/index.ejs"><i class="fa fa-table"></i>Tabla</a>
+  <div id="sidebar" class="sidebar">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">
+      <i class="fa fa-arrow-left arrow-icon"></i>
+    </a>
+    <div id="volumes" class="volumes" style="display: contents;">
+    </div>
+    <div class="menu-buttons" style="display: ruby-text;" id="models">
+      <% models.forEach(model => { %>
+        <div class="menu-button" id="<%= model.model %>" style="margin: 10px; background-color: white;">
+          <img class="images" src="/Images/<%= model.model %>.png" alt="<%= model.model %>">
+        </div>
+      <%})%>
+    </div>
+    <div id="messageBox">
+      <!-- Aquí se mostrará el mensaje -->
+    </div>
   </div>
   <div id="loadingOverlay">
     <div class="loader"></div>
     <div id="loadingText">Loading... 0%</div>
   </div>
   <main id="container">
-    <canvas id="gl"></canvas>
+    <canvas id="gl1"></canvas>
   </main>
   <script type="module" async>
-    import * as niivue from "/js/index.js"
+    import * as niivue from "https://niivue.github.io/niivue/dist/index.js"
+    //import * as niivue from "/js/index.js"
+
     var nv = new niivue.Niivue({
-      isOrientCube: true
+      dragAndDropEnabled: true,
+      logging: true,
+      
+      //isOrientCube: true
     });
+    nv.attachTo("gl1");
+    nv.setRadiologicalConvention(false);
+    nv.setSliceMM(true);
+    nv.graph.autoSizeMultiplanar = true;
+    nv.graph.opacity = 1.0;
     var sliceMovement = [0,0,0]
-    const url = window.location.href;
-    const parts = url.split('/');
+    const inferenceButtons = document.getElementById('models');
+
     var volumeList = [
-      { url: `/series/${parts[4]}.nii.gz`,
-        colormap: "gray",
-        opacity: 1
-      },
+      { url: `/series/<%= id %>.nii.gz`},
     ]
 
+    //await nv.addVolumeFromUrl({ url: `/series/<%= id %>.nii.gz`})
+    await addSee({id:"<%= id %>", model:"Examen"})
+
+    var inferencesfetch = await fetch("/inferences/<%= id %>", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+    });
+    var resultjson = await inferencesfetch.json();
+
+    resultjson.forEach(async (infer) => {
+      volumeList.push({
+        url: `/segmentations/${infer.id}_${infer.model}.nii.gz`,
+        colormap: "red",
+        opacity: 0.8
+      })
+      await nv.addVolumeFromUrl({url:`/segmentations/${infer.id}_${infer.model}.nii.gz`, colormap: "red", opacity: 0.8})
+      await addSee(infer)
+    })
+
+    await loadVolumes(volumeList);
+
+    nv.setClipPlaneThick(0.3)
     function updateProgress(percentage) {
       const loadingText = document.getElementById("loadingText");
       loadingText.innerHTML = `Loading... ${percentage}%`;
     }
-
     function simulateLoading(callback) {
       let percentage = 0;
       const interval = setInterval(() => {
@@ -386,12 +527,11 @@
         }
       }, 300);
     }
-
-    async function loadVolumes() {
+    async function loadVolumes(volum) {
       try {
         console.log("Starting to load volumes...");
         simulateLoading(async () => {
-          await nv.loadVolumes(volumeList);
+          await nv.loadVolumes(volum);
           console.log("Volumes loaded successfully.");
           document.getElementById("loadingOverlay").style.display = "none";
         });
@@ -401,9 +541,45 @@
       }
     }
 
-    nv.attachTo("gl");
-    loadVolumes();
-    
+    async function addSee(info) {
+        var volumen = document.createElement('div');
+        var state = true;
+        volumen.id = "customBox";
+        volumen.className = "volumen";
+        var eye = document.createElement('i')
+        eye.className = "fa fa-eye eye-icon"
+        eye.id = "toggleEye"
+        
+        volumen.appendChild(eye)
+
+        var text = document.createElement('P')
+        text.id = info.id;
+        text.className = "volume-id" 
+        text.innerHTML = info.model
+
+        volumen.appendChild(text)
+
+        document.getElementById("volumes").appendChild(volumen)
+
+        volumen.addEventListener('click', async (event) => {
+          volumen.classList.toggle("dark");
+          state = !state
+          var volContext = event.target.querySelector('.volume-id')
+          var index = nv.volumes.findIndex(vol => vol.name == `${volContext.id}_${volContext.textContent}.nii.gz`)
+          if (state){
+            await nv.setOpacity(index, 1.0)
+            //nv.setColormap(index, "blue")
+            //await nv.addVolumeFromUrl({url:`/segmentations/${event.target.querySelector('.volume-id').id}_${event.target.querySelector('.volume-id').textContent}.nii.gz`, colormap: "red", opacity: 0.7})
+          }else{
+            await nv.setOpacity(index, 0)
+            //nv.setColormap(index, "gold")
+            //var index = nv.volumes.findIndex(vol => vol.name === `${event.target.querySelector('.volume-id').id}_${event.target.querySelector('.volume-id').textContent}.nii.gz`)
+            //await nv.removeVolume(index)
+          }
+        })
+        //
+    }
+
     var slice = document.getElementById("sliceType");
     slice.onchange = function () {
       let st = parseInt(document.getElementById("sliceType").value);
@@ -435,7 +611,7 @@
       }
       slice.onchange()
     };
-    
+
     document.addEventListener('keydown', function(event) {
       serieMovement(event);
     });
@@ -467,7 +643,7 @@
 
     // Open and close sidebar
     document.getElementById("hamburger").onclick = function() {
-      document.getElementById("sidebar").style.width = "250px";
+      document.getElementById("sidebar").classList.add("open");
     }
 
     document.querySelector(".closebtn").onclick = function() {
@@ -475,8 +651,56 @@
     }
 
     function closeNav() {
-      document.getElementById("sidebar").style.width = "0";
+      document.getElementById("sidebar").classList.remove("open");
     }
+
+    // Toggle box color
+    /*document.getElementById("toggleEye").onclick = function(event) {
+      document.getElementById("customBox").classList.toggle("dark");
+    }*/
+
+    inferenceButtons.addEventListener('click', async (event) => {
+      if (event.target.classList.contains('menu-button')) {
+          const buttonValue = event.target.id;
+            document.getElementById('models').classList.toggle('minimizado');
+                console.log(buttonValue);
+                var response = await fetch("/inferenceV2", {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json'
+                     },
+                     body: JSON.stringify({
+                         id: `<%= id %>`,
+                         topography: buttonValue
+                     })
+                });
+                var result = await response.json();
+                document.getElementById('models').classList.toggle('minimizado');
+                //var message = document.createElement('div');
+                //message.innerHTML = result.message;
+                document.getElementById("messageBox").innerHTML = result.message;
+                if(result.isSuccess==true){
+                  addSee({id:`<%= id %>`,model:buttonValue})
+                  nv.addVolume(NVImage.loadFromUrl({ 
+                      url: `/segmentations/<%= id %>_${buttonValue}.nii.gz`,
+                      colormap: "gray",
+                      opacity: 1
+                    })
+                  )
+                }
+              }
+            })
+            nv.drawScene();
+            //nv.updateGLVolume();
+    //var volumesButtons = document.getElementById('volumes');  
+    
+    /*volumesButtons.addEventListener('click', async (event) => {
+      if (event.target.classList.contains('volume-id')){
+        console.log(event.target.id)
+      }
+    })*/
+
+      
   </script>
 </body>
 </html>

@@ -6,7 +6,7 @@ import numpy as np
 if __name__ == '__main__':
     
     # can be done in a loop if you have multiple files to be processed, speed is guaranteed if GPU is used:)
-    filename_nii =  'lung_018.nii'
+    filename_nii =  rf'C:\Users\DELL\OneDrive\Escritorio\Development\system_3d_integration\segmentations\6257d3d7-e71cbc7f-2d5e9fe0-7500003e-e6ffe12e_lungtumor.nii.gz'
     filename = filename_nii.split(".")[0]
 
     # read all the labels present in the file

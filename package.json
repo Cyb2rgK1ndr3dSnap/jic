@@ -4,6 +4,8 @@
     "body-parser": "^1.20.2",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
+    "gl-matrix": "^3.4.3",
+    "nifti-reader-js": "^0.6.8",
     "node-libcurl": "^4.0.0"
   },
   "devDependencies": {

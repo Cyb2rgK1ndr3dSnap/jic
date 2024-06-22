@@ -20,3 +20,9 @@ slicer.modules.segmentations.logic().ExportVisibleSegmentsToLabelmapNode(nodeSeg
 slicer.util.saveNode(segmentation_as_labelmap, rf"C:\Users\DELL\OneDrive\Escritorio\Development\system_3d_integration\segmentations\{sys.argv[1]}_{sys.argv[2]}.nii.gz")
 
 exit()
+
+slicer.util.selectModule('MONAILabel')
+slicer.modules.MONAILabelWidget.onStopTraining()
+slicer.modules.MONAILabelWidget.fetchInfo()
+slicer.modules.MONAILabelWidget.ui.segmentationModelSelector.setCurrentText("lungairway")
+slicer.modules.MONAILabelWidget.onTraining()
