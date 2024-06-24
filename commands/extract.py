@@ -1,7 +1,7 @@
 import json
 import SimpleITK as sitk
 
-image_path = rf"C:\Users\DELL\OneDrive\Escritorio\MONAI\Results\KidneyTumor\Results_1\case_00292.nii.gz"  # change this with your file
+image_path = rf"C:\Users\DELL\OneDrive\Escritorio\MONAI\Results\LungTumor\Results_2\0965.nii"  # change this with your file
 
  # read image
 itk_image = sitk.ReadImage(image_path) 

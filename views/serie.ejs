@@ -352,8 +352,14 @@
       <input type="range" min="0" max="1" value="0" class="slider" id="tdSlider"/>
       <label for="sliceSlider">A+C+S</label>
       <input type="range" min="0" max="2" value="0" class="slider" id="sliceSlider"/>
+      <label for="minSlider">Threshold Min</label>
+      <input type="range" min="0" max="0" value="0" class="slider" id="minSlider"/>
+      <label for="maxSlider">Threshold Max</label>
+      <input type="range" min="0" max="0" value="0" class="slider" id="maxSlider"/>
       <label for="planeSlider">Plane</label>
       <input type="range" min="0" max="1" value="0" class="slider" id="planeSlider"/>
+      <label for="thickSlider">thickPlane</label>
+      <input type="range" min="1" max="173" value="33" class="slider" id="thickSlider"/>
     </div>
     <div id="settings">
       <i class="settings-icon fa fa-cog" id="settingsIcon"></i>
@@ -504,13 +510,12 @@
         colormap: "red",
         opacity: 0.8
       })
-      await nv.addVolumeFromUrl({url:`/segmentations/${infer.id}_${infer.model}.nii.gz`, colormap: "red", opacity: 0.8})
+      //await nv.addVolumeFromUrl({url:`/segmentations/${infer.id}_${infer.model}.nii.gz`, colormap: "red", opacity: 0.8})
       await addSee(infer)
     })
 
     await loadVolumes(volumeList);
 
-    nv.setClipPlaneThick(0.3)
     function updateProgress(percentage) {
       const loadingText = document.getElementById("loadingText");
       loadingText.innerHTML = `Loading... ${percentage}%`;
@@ -531,14 +536,27 @@
       try {
         console.log("Starting to load volumes...");
         simulateLoading(async () => {
-          await nv.loadVolumes(volum);
+          await nv.loadVolumes(volum)
+          await huLoading()
           console.log("Volumes loaded successfully.");
           document.getElementById("loadingOverlay").style.display = "none";
+
         });
       } catch (error) {
         console.error("Error loading volumes: ", error);
         alert("Error loading volumes. Please check the console for more details.");
       }
+    }
+
+    async function huLoading(){
+      const min = nv.volumes[0].cal_min
+      const max = nv.volumes[0].cal_max
+      document.getElementById("minSlider").min = min
+      document.getElementById("minSlider").max = max
+      document.getElementById("maxSlider").min = min
+      document.getElementById("maxSlider").max = max
+      document.getElementById("minSlider").value = min
+      document.getElementById("maxSlider").value = max
     }
 
     async function addSee(info) {
@@ -595,6 +613,20 @@
       }
     }
 
+    thickSlider.oninput = function () {
+        nv.setClipPlaneThick(this.value / 173)
+    };
+
+    minSlider.onchange = function () {
+      nv.volumes[0].cal_min = this.value
+      nv.updateGLVolume()
+    };
+
+    maxSlider.onchange = function () {
+      nv.volumes[0].cal_max = this.value
+      nv.updateGLVolume()
+    };
+
     planeSlider.oninput = function () {
       if(this.value == 1){
         nv.setClipPlane([0, 270, 0])
@@ -635,12 +667,10 @@
           break;
       }
     }
-
     // Toggle settings menu
     document.getElementById("settingsIcon").onclick = function () {
       document.getElementById("settings").classList.toggle("active");
     };
-
     // Open and close sidebar
     document.getElementById("hamburger").onclick = function() {
       document.getElementById("sidebar").classList.add("open");
@@ -681,26 +711,22 @@
                 document.getElementById("messageBox").innerHTML = result.message;
                 if(result.isSuccess==true){
                   addSee({id:`<%= id %>`,model:buttonValue})
-                  nv.addVolume(NVImage.loadFromUrl({ 
-                      url: `/segmentations/<%= id %>_${buttonValue}.nii.gz`,
-                      colormap: "gray",
-                      opacity: 1
-                    })
-                  )
+                  await nv.addVolumeFromUrl({
+                    url: `/segmentations/<%= id %>_${buttonValue}.nii.gz`, 
+                    colormap: "blue", 
+                    opacity: 0.8
+                  })
                 }
               }
             })
-            nv.drawScene();
+            //nv.drawScene();
             //nv.updateGLVolume();
     //var volumesButtons = document.getElementById('volumes');  
-    
     /*volumesButtons.addEventListener('click', async (event) => {
       if (event.target.classList.contains('volume-id')){
         console.log(event.target.id)
       }
     })*/
-
-      
   </script>
 </body>
 </html>

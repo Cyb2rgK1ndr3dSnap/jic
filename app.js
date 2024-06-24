@@ -218,7 +218,6 @@ app.post('/inferences/:id', async (req, res) => {
       }
     }
   });
-  console.log(inferences)
   if (inferences) 
     return res.status(200).json(inferences);
   
